@@ -1,0 +1,80 @@
+﻿@page "/character"
+@inherits OwningComponentBase
+@inject NavigationManager NavigationManager
+@using IDHLDeveloperTest.Models;
+@using IDHLDeveloperTest.Services;
+@using System.Text.Json;
+@using Microsoft.AspNetCore.WebUtilities;
+@if (Character == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <button class="btn btn-primary" @onclick="GoBack">Go Back</button>
+<h3>@Character.name Details</h3>
+<div style="padding: 10px;">
+    <div class="row">
+        <div class="col-md-4">
+            <img src="@Character.imageUrl" style="max-width: 300px; max-height: 300px;">
+        </div>
+        <div class="col-md-8">
+            <p><strong>Name:</strong> @Character.name</p>
+            <p><strong>Films:</strong></p>
+            <ul>
+                @foreach (var film in Character.films)
+                    {
+                        <li>@film</li>
+                    }
+                </ul>
+                <p><strong>TV Shows:</strong></p>
+                <ul>
+                    @foreach (var tvShow in Character.tvShows)
+                    {
+                        <li>@tvShow</li>
+                    }
+                </ul>
+                <p><strong>Video Games:</strong></p>
+                <ul>
+                    @foreach (var videoGame in Character.videoGames)
+                    {
+                        <li>@videoGame</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public int currentPageNumber { get; set; }
+
+    private Character Character { get; set; } = new Character();
+    protected IClientService clientService;
+
+    protected override async Task OnInitializedAsync()
+    {
+        clientService = (IClientService)ScopedServices.GetService(typeof(IClientService));
+        //int characterId = 1;//int.Parse(CharacterId);
+        //Character = await clientService.GetCharacter(characterId);
+        //character = JsonSerializer.Deserialize<CharacterDetails>(characterJson);
+
+
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        var characterJson = query["Character"];
+        Character = JsonSerializer.Deserialize<Character>(characterJson);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("currentPageNumber", out var pageNumberValue))
+        {
+            currentPageNumber = int.Parse(pageNumberValue);
+        }
+    }
+
+    public async Task GoBack()
+    {
+        NavigationManager.NavigateTo($"/CharactersTable?pageNumber={currentPageNumber}");
+    }
+}
