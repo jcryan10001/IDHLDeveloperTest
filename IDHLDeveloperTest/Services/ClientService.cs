@@ -1,4 +1,5 @@
 ﻿using IDHLDeveloperTest.Models;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -14,16 +15,21 @@ namespace IDHLDeveloperTest.Services
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<CharacterList> GetCharacters(int pageNumber)
+        public async Task<(CharacterList characterList, HttpStatusCode statusCode)> GetCharacters(int pageNumber, int batchSize)
         {
             var client = _httpClientFactory.CreateClient();
-            var response = await client.GetAsync($"https://api.disneyapi.dev/characters?page={pageNumber}");
-            response.EnsureSuccessStatusCode();
+            var response = await client.GetAsync($"https://api.disneyapi.dev/characters?page={pageNumber}&pageSize={batchSize}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return (null, response.StatusCode);
+            }
 
             var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<CharacterList>(content);
-        }
+            var characterList = JsonSerializer.Deserialize<CharacterList>(content);
 
+            return (characterList, response.StatusCode);
+        }
         public async Task<Character> GetCharacter(int id)
         {
             var client = _httpClientFactory.CreateClient();
